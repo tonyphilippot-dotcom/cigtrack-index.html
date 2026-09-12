@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CigTrack">
+<meta name="theme-color" content="#1C1B1A">
+<title>CigTrack — Suivi cigarettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1C1B1A; --surface:#242220; --surface-alt:#2D2A27;
+    --border:#3A3631; --text:#EDE8E2; --text-muted:#9C938A;
+    --amber:#D4A24C; --amber-dim:#7A6238;
+    --sage:#7FA087; --sage-dim:#3E4B41;
+    --danger:#C06B5C;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif; min-height:100vh;
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);}
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:500; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{max-width:480px; margin:0 auto; padding:20px 18px 96px;}
+  header.top{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px;}
+  header.top h1{font-size:22px; letter-spacing:.2px;}
+  header.top .date{color:var(--text-muted); font-size:13px; font-family:'IBM Plex Mono',monospace;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .hero{background:linear-gradient(160deg,var(--surface-alt),var(--surface)); text-align:center; padding:28px 18px;}
+  .hero .label{color:var(--text-muted); font-size:13px; margin-bottom:6px;}
+  .hero .big{font-size:52px; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--amber); line-height:1;}
+  .hero .sub{color:var(--text-muted); font-size:13px; margin-top:8px;}
+
+  label{display:block; font-size:13px; color:var(--text-muted); margin-bottom:6px;}
+  input[type=number], input[type=time], input[type=text]{
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    color:var(--text); font-size:17px; padding:12px 14px; font-family:'IBM Plex Mono',monospace;
+  }
+  input:focus{outline:none; border-color:var(--amber);}
+  .row{display:flex; gap:10px;}
+  .row > *{flex:1;}
+
+  button{font-family:'IBM Plex Sans',sans-serif; font-size:15px; font-weight:500; border:none;
+    border-radius:10px; padding:13px 16px; cursor:pointer;}
+  .btn-primary{background:var(--amber); color:#241C0E; width:100%;}
+  .btn-secondary{background:transparent; border:1px solid var(--border); color:var(--text); width:100%;}
+  .btn-ghost{background:transparent; color:var(--amber); padding:8px 4px; font-size:14px;}
+  button:active{opacity:.75;}
+
+  .stack{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
+
+  .tabs{position:fixed; bottom:0; left:0; right:0; background:rgba(28,27,26,.94);
+    backdrop-filter:blur(10px); border-top:1px solid var(--border);
+    display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:50;}
+  .tabs button{flex:1; background:none; border-radius:0; padding:12px 4px 10px; color:var(--text-muted); font-size:12px;}
+  .tabs button.active{color:var(--amber);}
+  .tabs .icon{display:block; font-size:19px; margin-bottom:2px;}
+
+  .segmented{display:flex; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:3px; margin-bottom:14px;}
+  .segmented button{flex:1; background:none; color:var(--text-muted); font-size:13px; padding:8px 4px; border-radius:8px;}
+  .segmented button.active{background:var(--surface-alt); color:var(--text);}
+
+  .period-item{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);}
+  .period-item:last-child{border-bottom:none;}
+  .period-item .p-label{font-size:14px;}
+  .period-item .p-sub{font-size:12px; color:var(--text-muted); margin-top:2px;}
+  .period-item .p-val{font-family:'IBM Plex Mono',monospace; font-size:16px; color:var(--amber); text-align:right;}
+  .bar-wrap{height:6px; background:var(--bg); border-radius:3px; margin-top:6px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--amber);}
+
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+  .stat-box{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px;}
+  .stat-box .n{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600;}
+  .stat-box .l{font-size:12px; color:var(--text-muted); margin-top:2px;}
+  .stat-box.sage .n{color:var(--sage);}
+
+  .toggle{position:relative; width:44px; height:26px; background:var(--bg); border:1px solid var(--border); border-radius:999px; cursor:pointer; flex:none !important;}
+  .toggle .dot{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--text-muted); transition:.15s;}
+  .toggle.on{background:var(--amber-dim); border-color:var(--amber);}
+  .toggle.on .dot{left:20px; background:var(--amber);}
+  .setting-row{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);}
+  .setting-row:last-child{border-bottom:none;}
+  .setting-row .txt{flex:1;}
+  .setting-row .txt .t{font-size:14px;}
+  .setting-row .txt .d{font-size:12px; color:var(--text-muted); margin-top:2px;}
+
+  .note{font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-top:4px;}
+  .pill{display:inline-block; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-muted); font-size:12px; padding:3px 9px; border-radius:999px; margin-top:8px;}
+  .empty{text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;}
+  .screen{display:none;} .screen.active{display:block;}
+  .toast{position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--surface-alt);
+    border:1px solid var(--border); color:var(--text); padding:10px 18px; border-radius:999px; font-size:13px;
+    opacity:0; pointer-events:none; transition:.2s; z-index:100;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1>CigTrack</h1>
+    <span class="date mono" id="topDate"></span>
+  </header>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home"></div>
+
+  <!-- HISTORY -->
+  <div class="screen" id="screen-history">
+    <div class="segmented" id="periodTabs">
+      <button data-p="day" class="active">Jour</button>
+      <button data-p="week">Semaine</button>
+      <button data-p="month">Mois</button>
+      <button data-p="year">Année</button>
+    </div>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="card"><div id="periodList"></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="card">
+      <h3 style="margin-bottom:12px; font-size:16px;">Paquet & prix</h3>
+      <div class="stack">
+        <div>
+          <label>Prix d'un paquet (€)</label>
+          <input type="number" id="setPrice" inputmode="decimal" step="0.1">
+        </div>
+        <div>
+          <label>Cigarettes par paquet</label>
+          <input type="number" id="setPackSize" inputmode="numeric">
+        </div>
+        <div>
+          <label>Consommation de référence (cig/jour) — pour calculer l'économie</label>
+          <input type="number" id="setBaseline" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:6px; font-size:16px;">Rappels</h3>
+      <p class="note">Ces rappels ne se déclenchent que si CigTrack est ouvert dans Safari — Apple ne permet pas de notifications programmées en arrière-plan pour une simple page web. Pour un rappel garanti même app fermée, ajoutez aussi une alarme dans l'app Réveil ou un Rappel iOS à ces horaires.</p>
+      <div class="setting-row">
+        <div class="txt"><div class="t">Rappel du matin</div><div class="d" id="morningTimeLabel"></div></div>
+        <input type="time" id="setMorningTime" style="width:110px;">
+        <div class="toggle" id="toggleMorning"><div class="dot"></div></div>
+      </div>
+      <div class="setting-row">
+        <div class="txt"><div class="t">Rappel du soir</div><div class="d" id="eveningTimeLabel"></div></div>
+        <input type="time" id="setEveningTime" style="width:110px;">
+        <div class="toggle" id="toggleEvening"><div class="dot"></div></div>
+      </div>
+      <button class="btn-secondary" id="btnNotifPerm" style="margin-top:12px;">Autoriser les notifications</button>
+      <div id="notifStatus" class="note" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px; font-size:16px;">Données</h3>
+      <button class="btn-secondary" id="btnReset" style="color:var(--danger); border-color:var(--danger);">Réinitialiser toutes les données</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button data-screen="home" class="active"><span class="icon">●</span>Aujourd'hui</button>
+    <button data-screen="history"><span class="icon">▤</span>Historique</button>
+    <button data-screen="settings"><span class="icon">⚙</span>Réglages</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULTS = { price:11, packSize:20, baseline:20,
+  morningTime:"08:00", eveningTime:"21:30", morningOn:true, eveningOn:true };
+let settings = {...DEFAULTS};
+let entries = {}; // date -> {morning,evening,newPacks,notifM,notifE}
+let currentPeriod = 'day';
+
+function pad(n){return n<10?'0'+n:''+n;}
+function todayKey(){const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fmtDateLabel(k){
+  const [y,m,d]=k.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  return dt.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
+}
+function euro(n){return (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
+
+async function loadData(){
+  try{
+    const r = await window.storage.get('cigtrack-settings', false);
+    if(r && r.value) settings = {...DEFAULTS, ...JSON.parse(r.value)};
+  }catch(e){}
+  try{
+    const r = await window.storage.get('cigtrack-entries', false);
+    if(r && r.value) entries = JSON.parse(r.value);
+  }catch(e){}
+}
+async function saveSettings(){
+  try{ await window.storage.set('cigtrack-settings', JSON.stringify(settings), false); }catch(e){}
+}
+async function saveEntries(){
+  try{ await window.storage.set('cigtrack-entries', JSON.stringify(entries), false); }catch(e){}
+}
+function getEntry(k){
+  if(!entries[k]) entries[k] = {morning:null, evening:null, newPacks:0, notifM:false, notifE:false};
+  return entries[k];
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const k = todayKey();
+  const e = getEntry(k);
+  const el = document.getElementById('screen-home');
+  let html = '';
+
+  if(e.morning === null){
+    html += `
+      <div class="card hero">
+        <div class="label">Ce matin, il reste dans le paquet</div>
+        <div class="row" style="max-width:220px; margin:14px auto 0;">
+          <input type="number" id="inMorning" inputmode="numeric" placeholder="ex. 6" style="text-align:center; font-size:22px;">
+        </div>
+        <button class="btn-primary" id="btnSaveMorning" style="margin-top:14px;">Enregistrer</button>
+      </div>`;
+  } else {
+    html += `
+      <div class="card hero">
+        <div class="label">Ce matin</div>
+        <div class="big">${e.morning}</div>
+        <div class="sub">cigarettes restantes déclarées</div>
+        ${e.newPacks>0 ? `<div class="pill">${e.newPacks} nouveau${e.newPacks>1?'x':''} paquet${e.newPacks>1?'s':''} ouvert${e.newPacks>1?'s':''} aujourd'hui</div>` : ''}
+      </div>
+      <button class="btn-secondary" id="btnNewPack" style="margin-bottom:14px;">+ Nouveau paquet ouvert</button>`;
+
+    if(e.evening === null){
+      html += `
+        <div class="card">
+          <div class="label" style="margin-bottom:8px;">Ce soir, il reste dans le paquet</div>
+          <input type="number" id="inEvening" inputmode="numeric" placeholder="ex. 3" style="text-align:center; font-size:20px;">
+          <button class="btn-primary" id="btnSaveEvening" style="margin-top:12px;">Enregistrer le soir</button>
+        </div>`;
+    } else {
+      const smoked = e.morning + e.newPacks*settings.packSize - e.evening;
+      html += `
+        <div class="card">
+          <div class="label">Bilan du jour</div>
+          <div class="stat-grid" style="margin-top:10px; margin-bottom:0;">
+            <div class="stat-box"><div class="n">${smoked}</div><div class="l">cigarettes fumées</div></div>
+            <div class="stat-box"><div class="n">${euro(smoked*(settings.price/settings.packSize))}</div><div class="l">dépensé</div></div>
+          </div>
+          <div class="note" style="margin-top:10px;">Restant ce soir : ${e.evening}. Modifiable ci-dessous.</div>
+          <input type="number" id="inEveningEdit" value="${e.evening}" inputmode="numeric" style="margin-top:8px; text-align:center;">
+          <button class="btn-ghost" id="btnEditEvening">Mettre à jour</button>
+        </div>`;
+    }
+  }
+
+  // mini recent history
+  const keys = Object.keys(entries).sort().reverse().filter(x=>x!==k).slice(0,5);
+  if(keys.length){
+    html += `<div class="card"><div class="label" style="margin-bottom:6px;">Derniers jours</div>`;
+    keys.forEach(dk=>{
+      const de = entries[dk];
+      const complete = de.morning!==null && de.evening!==null;
+      const s = complete ? de.morning + de.newPacks*settings.packSize - de.evening : null;
+      html += `<div class="period-item"><span class="p-label">${fmtDateLabel(dk)}</span><span class="p-val">${complete? s+' cig.' : '—'}</span></div>`;
+    });
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+
+  const bM = document.getElementById('btnSaveMorning');
+  if(bM) bM.onclick = async ()=>{
+    const v = parseInt(document.getElementById('inMorning').value);
+    if(isNaN(v) || v<0){ showToast('Entre un nombre valide'); return; }
+    e.morning = v; await saveEntries(); renderHome();
+  };
+  const bNP = document.getElementById('btnNewPack');
+  if(bNP) bNP.onclick = async ()=>{ e.newPacks += 1; await saveEntries(); renderHome(); showToast('Paquet ajouté'); };
+  const bE = document.getElementById('btnSaveEvening');
+  if(bE) bE.onclick = async ()=>{
+    const v = parseInt(document.getElementById('inEvening').value);
+    if(isNaN(v) || v<0){ showToast('Entre un nombre valide'); return; }
+    e.evening = v; await saveEntries(); renderHome();
+  };
+  const bEE = document.getElementById('btnEditEvening');
+  if(bEE) bEE.onclick = async ()=>{
+    const v = parseInt(document.getElementById('inEveningEdit').value);
+    if(isNaN(v) || v<0){ showToast('Entre un nombre valide'); return; }
+    e.evening = v; await saveEntries(); renderHome(); showToast('Mis à jour');
+  };
+}
+
+/* ---------- HISTORY ---------- */
+function isoWeekKey(dt){
+  const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  const wk = Math.ceil((((d-yearStart)/86400000)+1)/7);
+  return d.getUTCFullYear()+'-S'+pad(wk);
+}
+function periodKeyFor(dateKey, period){
+  const [y,m,d] = dateKey.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  if(period==='day') return dateKey;
+  if(period==='week') return isoWeekKey(dt);
+  if(period==='month') return y+'-'+pad(m);
+  if(period==='year') return ''+y;
+}
+function computeGroups(period){
+  const groups = {};
+  Object.keys(entries).forEach(k=>{
+    const e = entries[k];
+    if(e.morning===null || e.evening===null) return;
+    const smoked = e.morning + e.newPacks*settings.packSize - e.evening;
+    const pk = periodKeyFor(k, period);
+    if(!groups[pk]) groups[pk] = {smoked:0, days:0};
+    groups[pk].smoked += Math.max(0,smoked);
+    groups[pk].days += 1;
+  });
+  return groups;
+}
+function renderHistory(){
+  const groups = computeGroups(currentPeriod);
+  const keys = Object.keys(groups).sort().reverse();
+  const pricePerCig = settings.price/settings.packSize;
+
+  let totalSmoked=0, totalDays=0;
+  keys.forEach(k=>{ totalSmoked += groups[k].smoked; totalDays += groups[k].days; });
+  const totalSpent = totalSmoked * pricePerCig;
+  const totalSaved = Math.max(0, (settings.baseline*totalDays - totalSmoked)) * pricePerCig;
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-box"><div class="n">${totalSmoked}</div><div class="l">cigarettes (total période)</div></div>
+    <div class="stat-box"><div class="n">${euro(totalSpent)}</div><div class="l">dépensé</div></div>
+    <div class="stat-box sage" style="grid-column:1/3;"><div class="n">${euro(totalSaved)}</div><div class="l">économisé vs. ${settings.baseline} cig./jour de référence</div></div>
+  `;
+
+  const max = Math.max(1, ...keys.map(k=>groups[k].smoked));
+  let listHtml = '';
+  if(!keys.length){
+    listHtml = `<div class="empty">Pas encore de journée complète (matin + soir) sur cette période.</div>`;
+  } else {
+    keys.forEach(k=>{
+      const g = groups[k];
+      const avg = (g.smoked/g.days).toFixed(1);
+      let label = k;
+      if(currentPeriod==='day') label = fmtDateLabel(k);
+      listHtml += `
+        <div class="period-item" style="display:block;">
+          <div style="display:flex; justify-content:space-between;">
+            <span class="p-label">${label}<div class="p-sub">${g.days} jour${g.days>1?'s':''} · moy. ${avg}/j</div></span>
+            <span class="p-val">${g.smoked} cig.<div class="p-sub">${euro(g.smoked*pricePerCig)}</div></span>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${(g.smoked/max*100).toFixed(0)}%"></div></div>
+        </div>`;
+    });
+  }
+  document.getElementById('periodList').innerHTML = listHtml;
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  document.getElementById('setPrice').value = settings.price;
+  document.getElementById('setPackSize').value = settings.packSize;
+  document.getElementById('setBaseline').value = settings.baseline;
+  document.getElementById('setMorningTime').value = settings.morningTime;
+  document.getElementById('setEveningTime').value = settings.eveningTime;
+  document.getElementById('morningTimeLabel').textContent = 'Heure : ' + settings.morningTime;
+  document.getElementById('eveningTimeLabel').textContent = 'Heure : ' + settings.eveningTime;
+  document.getElementById('toggleMorning').classList.toggle('on', settings.morningOn);
+  document.getElementById('toggleEvening').classList.toggle('on', settings.eveningOn);
+  updateNotifStatus();
+}
+function updateNotifStatus(){
+  const s = document.getElementById('notifStatus');
+  if(!('Notification' in window)){ s.textContent = "Notifications non disponibles dans ce navigateur."; return; }
+  s.textContent = "Statut : " + (Notification.permission==='granted' ? 'autorisées ✓' : Notification.permission==='denied' ? 'refusées — active-les dans Réglages Safari' : 'pas encore demandées');
+}
+
+/* ---------- NAV ---------- */
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name));
+  if(name==='home') renderHome();
+  if(name==='history') renderHistory();
+  if(name==='settings') renderSettings();
+}
+
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.onclick = ()=>showScreen(b.dataset.screen);
+});
+document.querySelectorAll('#periodTabs button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('#periodTabs button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentPeriod = b.dataset.p;
+    renderHistory();
+  };
+});
+
+document.getElementById('setPrice').onchange = e=>{ settings.price=parseFloat(e.target.value)||0; saveSettings(); };
+document.getElementById('setPackSize').onchange = e=>{ settings.packSize=parseInt(e.target.value)||20; saveSettings(); };
+document.getElementById('setBaseline').onchange = e=>{ settings.baseline=parseInt(e.target.value)||0; saveSettings(); };
+document.getElementById('setMorningTime').onchange = e=>{ settings.morningTime=e.target.value; document.getElementById('morningTimeLabel').textContent='Heure : '+e.target.value; saveSettings(); };
+document.getElementById('setEveningTime').onchange = e=>{ settings.eveningTime=e.target.value; document.getElementById('eveningTimeLabel').textContent='Heure : '+e.target.value; saveSettings(); };
+document.getElementById('toggleMorning').onclick = ()=>{ settings.morningOn=!settings.morningOn; renderSettings(); saveSettings(); };
+document.getElementById('toggleEvening').onclick = ()=>{ settings.eveningOn=!settings.eveningOn; renderSettings(); saveSettings(); };
+
+document.getElementById('btnNotifPerm').onclick = async ()=>{
+  if(!('Notification' in window)){ showToast('Non supporté sur ce navigateur'); return; }
+  const p = await Notification.requestPermission();
+  updateNotifStatus();
+  if(p==='granted') showToast('Notifications autorisées');
+};
+
+document.getElementById('btnReset').onclick = async ()=>{
+  if(!confirm('Supprimer toutes les données CigTrack ? Cette action est irréversible.')) return;
+  entries = {}; settings = {...DEFAULTS};
+  await saveEntries(); await saveSettings();
+  renderSettings(); showToast('Données réinitialisées');
+};
+
+/* ---------- reminder loop (best-effort, app must be open) ---------- */
+setInterval(()=>{
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const now = new Date();
+  const hm = pad(now.getHours())+':'+pad(now.getMinutes());
+  const k = todayKey();
+  const e = getEntry(k);
+  if(settings.morningOn && hm===settings.morningTime && !e.notifM){
+    new Notification('CigTrack', {body:"Combien de cigarettes restent dans le paquet ce matin ?"});
+    e.notifM = true; saveEntries();
+  }
+  if(settings.eveningOn && hm===settings.eveningTime && !e.notifE){
+    new Notification('CigTrack', {body:"Bilan du soir : combien reste-t-il dans le paquet ?"});
+    e.notifE = true; saveEntries();
+  }
+}, 20000);
+
+/* ---------- init ---------- */
+(async function init(){
+  document.getElementById('topDate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long', day:'2-digit', month:'long'});
+  await loadData();
+  showScreen('home');
+})();
+</script>
+</body>
+</html>
