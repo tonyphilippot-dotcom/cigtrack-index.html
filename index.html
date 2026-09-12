@@ -190,19 +190,19 @@ function euro(n){return (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumF
 
 async function loadData(){
   try{
-    const r = await window.storage.get('cigtrack-settings', false);
-    if(r && r.value) settings = {...DEFAULTS, ...JSON.parse(r.value)};
+    const raw = localStorage.getItem('cigtrack-settings');
+    if(raw) settings = {...DEFAULTS, ...JSON.parse(raw)};
   }catch(e){}
   try{
-    const r = await window.storage.get('cigtrack-entries', false);
-    if(r && r.value) entries = JSON.parse(r.value);
+    const raw = localStorage.getItem('cigtrack-entries');
+    if(raw) entries = JSON.parse(raw);
   }catch(e){}
 }
 async function saveSettings(){
-  try{ await window.storage.set('cigtrack-settings', JSON.stringify(settings), false); }catch(e){}
+  try{ localStorage.setItem('cigtrack-settings', JSON.stringify(settings)); }catch(e){}
 }
 async function saveEntries(){
-  try{ await window.storage.set('cigtrack-entries', JSON.stringify(entries), false); }catch(e){}
+  try{ localStorage.setItem('cigtrack-entries', JSON.stringify(entries)); }catch(e){}
 }
 function getEntry(k){
   if(!entries[k]) entries[k] = {morning:null, evening:null, newPacks:0, notifM:false, notifE:false};
